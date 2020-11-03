@@ -3,8 +3,6 @@ from pysat.pb import *
 from pysat.formula import IDPool
 import sys
 import re
-import os
-
 
 # 1. Read file character
 # 2. Determine pre-existing cell values and constraints
@@ -96,7 +94,7 @@ def get_clause(v, c):
 
 
 def get_solved_board(solved_model, fic):
-    board = re.sub('[.]', ' ', re.sub('[0-9]', '_', '\n'.join(fic)))
+    board = re.sub('[0-9]', '_', '\n'.join(fic))
     for i in range(n):
         for j in range(n):
             next_to_replace = board.find('_')
@@ -117,7 +115,7 @@ def solve_with_cnf(p, fic):
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
         if is_solvable:
-            print('\n---------------SOLUTION----------------')
+            print('---------------SOLUTION----------------')
             print(get_solved_board(q.get_model(), fic))
             return q.get_model()
         else:
