@@ -3,6 +3,7 @@ from pysat.pb import *
 from pysat.formula import IDPool
 import sys
 import re
+import os
 
 
 # 1. Read file character
@@ -31,16 +32,15 @@ def get_grid(f):
     v, c, n = [], [], (len(f) + 1) // 2
 
     for i in range(len(f)):
-        ll = []
         if i % 2 == 0:
+            ll = []
             for j in range(len(f[i])):
-                if f[i][j] != ' ':
-                    if f[i][j] == '<':
-                        c.append([h(i, j + 1), h(i, j - 1)])
-                    elif f[i][j] == '>':
-                        c.append([h(i, j - 1), h(i, j + 1)])
-                    else:
-                        ll.append(f[i][j])
+                if f[i][j] == '<':
+                    c.append([h(i, j + 1), h(i, j - 1)])
+                elif f[i][j] == '>':
+                    c.append([h(i, j - 1), h(i, j + 1)])
+                elif f[i][j] != ' ':
+                    ll.append(f[i][j])
             v.append(ll)
         else:
             for j in range(len(f[i])):
@@ -126,5 +126,8 @@ def solve_with_cnf(p, fic):
 
 
 if __name__ == "__main__":
-    solve_with_file(sys.argv[1])
+    try:
+        solve_with_file(sys.argv[1])
+    except FileNotFoundError:
+        print("Invalid file path given!")
 
