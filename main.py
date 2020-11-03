@@ -64,38 +64,32 @@ def get_clause(v, c):
             lits = []
             for z in range(1, n + 1):
                 lits.append(s(x, y, z))
-            p.extend(PBEnc.equals(lits=lits, bound=1, vpool=vpool).clauses)
+            p.extend(PBEnc.atleast(lits=lits, bound=1, vpool=vpool).clauses)
     # unique values in each row or column
     for z in range(1, n + 1):
         for a in range(n):
             lits_row = []
             lits_col = []
+            weights = []
             for b in range(n):
                 lits_row.append(s(a, b, z))
                 lits_col.append(s(b, a, z))
-            p.extend(PBEnc.equals(lits=lits_row, bound=1, vpool=vpool).clauses)
-            p.extend(PBEnc.equals(lits=lits_col, bound=1, vpool=vpool).clauses)
+                weights.append(z)
+            p.extend(PBEnc.equals(lits=lits_row, weights=weights, bound=z, vpool=vpool).clauses)
+            p.extend(PBEnc.equals(lits=lits_col, weights=weights, bound=z, vpool=vpool).clauses)
     # inequalities hold
-    # for x in c:
-    #     (a, b) = x
-    #     (i1, j1) = a
-    #     (i2, j2) = b
-    #     lits = []
-    #     weights = []
-    #     for z in range(1, n + 1):
-    #         lits.append(s(i1, j1, z)) # greater value
-    #         lits.append(s(i2, j2, z)) # lesser value
-    #         weights.append(z) # +
-    #         weights.append(-z) # -
-    #     p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
-
     for x in c:
         (a, b) = x
         (i1, j1) = a
         (i2, j2) = b
-        for y in range(1, n):
-            for z in range(y + 1, n + 1):
-                p.extend(PBEnc.atleast(lits=[-s(i1, j1, y), -s(i2, j2, z)], bound=1, vpool=vpool).clauses)
+        lits = []
+        weights = []
+        for z in range(1, n + 1):
+            lits.append(s(i1, j1, z))
+            lits.append(s(i2, j2, z))
+            weights.append(z)
+            weights.append(-z)
+        p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
     return p
 
 
@@ -115,7 +109,6 @@ def solve_with_file(f):
     fic = read_file(f)
     v, c = get_grid(fic)
     p = get_clause(v, c)
-    print(p.clauses)
     return solve_with_cnf(p)
 
 
