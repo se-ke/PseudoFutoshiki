@@ -1,6 +1,8 @@
 from pysat.solvers import MapleChrono
 from pysat.pb import *
 from pysat.formula import IDPool
+import sys
+import re
 
 
 # 1. Read file character
@@ -93,32 +95,36 @@ def get_clause(v, c):
     return p
 
 
-def get_solved_board(solved_model):
-    rows = []
+def get_solved_board(solved_model, fic):
+    board = re.sub('[.]', ' ', re.sub('[0-9]', '_', '\n'.join(fic)))
     for i in range(n):
-        row = []
         for j in range(n):
+            next_to_replace = board.find('_')
             for k in range(1, n + 1):
                 if s(i, j, k) in solved_model:
-                    row.append(str(k))
-        rows.append(' '.join(row))
-    return '\n'.join(rows)
+                    board = board[:next_to_replace] + str(k) + board[next_to_replace + 1:]
+    return board
 
 
 def solve_with_file(f):
     fic = read_file(f)
     v, c = get_grid(fic)
     p = get_clause(v, c)
-    return solve_with_cnf(p)
+    return solve_with_cnf(p, fic)
 
 
-def solve_with_cnf(p):
+def solve_with_cnf(p, fic):
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
         if is_solvable:
             print('\n---------------SOLUTION----------------')
-            print(get_solved_board(q.get_model()))
+            print(get_solved_board(q.get_model(), fic))
             return q.get_model()
         else:
             print("Unsolvable!")
             return None
+
+
+if __name__ == "__main__":
+    solve_with_file(sys.argv[1])
+
