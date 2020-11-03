@@ -1,5 +1,4 @@
-from pysat.solvers import Solver, MapleChrono
-from pysat.formula import CNF
+from pysat.solvers import MapleChrono
 from pysat.pb import *
 from pysat.formula import IDPool
 
@@ -9,6 +8,7 @@ from pysat.formula import IDPool
 # 3. Given the pre-existing cell values and constraints, create CNF formula
 # 4. Feed that CNF formula into SAT solver
 
+
 def s(x, y, z):
     if z == "_":
         z = 0
@@ -16,7 +16,8 @@ def s(x, y, z):
 
 
 def read_file(file_name):
-    return open(file_name, 'r').read().split('\n')
+    with open(file_name, 'r') as f:
+        return f.read().split('\n')
 
 
 def get_grid(f):
@@ -75,44 +76,56 @@ def get_clause(v, c):
             p.extend(PBEnc.equals(lits=lits_row, bound=1, vpool=vpool).clauses)
             p.extend(PBEnc.equals(lits=lits_col, bound=1, vpool=vpool).clauses)
     # inequalities hold
+    # for x in c:
+    #     (a, b) = x
+    #     (i1, j1) = a
+    #     (i2, j2) = b
+    #     lits = []
+    #     weights = []
+    #     for z in range(1, n + 1):
+    #         lits.append(s(i1, j1, z)) # greater value
+    #         lits.append(s(i2, j2, z)) # lesser value
+    #         weights.append(z) # +
+    #         weights.append(-z) # -
+    #     p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
+
     for x in c:
         (a, b) = x
         (i1, j1) = a
         (i2, j2) = b
-        lits = []
-        weights = []
-        for z in range(1, n + 1):
-            lits.append(s(i1, j1, z))
-            lits.append(s(i2, j2, z))
-            weights.append(z)
-            weights.append(-z)
-        p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
+        for y in range(1, n):
+            for z in range(y + 1, n + 1):
+                p.extend(PBEnc.atleast(lits=[-s(i1, j1, y), -s(i2, j2, z)], bound=1, vpool=vpool).clauses)
     return p
 
 
-def solve(p):
+def get_solved_board(solved_model):
+    rows = []
+    for i in range(n):
+        row = []
+        for j in range(n):
+            for k in range(1, n + 1):
+                if s(i, j, k) in solved_model:
+                    row.append(str(k))
+        rows.append(' '.join(row))
+    return '\n'.join(rows)
+
+
+def solve_with_file(f):
+    fic = read_file(f)
+    v, c = get_grid(fic)
+    p = get_clause(v, c)
+    print(p.clauses)
+    return solve_with_cnf(p)
+
+
+def solve_with_cnf(p):
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
         if is_solvable:
-            print_sol(q.get_model())
+            print('\n---------------SOLUTION----------------')
+            print(get_solved_board(q.get_model()))
+            return q.get_model()
         else:
             print("Unsolvable!")
-
-
-def print_sol(sol):
-    print('\n---------------SOLUTION----------------')
-    print(sol)
-    for i in range(n):
-        for j in range(n):
-            for k in range(1, n + 1):
-                if s(i, j, k) in sol:
-                    print(k, end=' ')
-        print()
-
-
-fic = read_file("boards/grid3_1")
-v, c = get_grid(fic)
-p = get_clause(v, c)
-print(len(p.clauses))
-solve(p)
-
+            return None
