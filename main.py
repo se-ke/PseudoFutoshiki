@@ -4,23 +4,29 @@ from pysat.formula import IDPool
 import sys
 import re
 
-# 1. Read file character
+# 1. Read file characters
 # 2. Determine pre-existing cell values and constraints
 # 3. Given the pre-existing cell values and constraints, create CNF formula
 # 4. Feed that CNF formula into SAT solver
 
-
+# assigns a unique number to represent the variable for a particular
+# value z in tile position (x, y)
 def s(x, y, z):
     if z == "_":
         z = 0
     return (n * n) * x + n * y + int(z)
 
-
+# given a file path and name, return the characters
+# of the corresponding file
 def read_file(file_name):
     with open(file_name, 'r') as f:
         return f.read().split('\n')
 
-
+# given the file characters representing the futoshiki board,
+# return the array v containing the pre-existing tile values
+# on the board and also return the array c which contains
+# pairs representing the constraints/inequalities in the board,
+# with the first element in the pair being larger than the second
 def get_grid(f):
     global n
 
@@ -48,7 +54,10 @@ def get_grid(f):
                     c.append([h(i - 1, j), h(i + 1, j)])
     return v, c
 
-
+# given the two arrays v (already assigned variables) and
+# c (tile constraints) return the clauses representing the
+# boolean formula needed to solve for a solution of the
+# futoshiki board
 def get_clause(v, c):
     p = CNF()
     vpool = IDPool()
@@ -58,7 +67,7 @@ def get_clause(v, c):
                 vpool.id('v{0}'.format(s(i, j, z)))
             if v[i][j] != "_":
                 p.extend(PBEnc.equals(lits=[s(i, j, v[i][j])], bound=1, vpool=vpool).clauses)
-    # one value per square
+    # at least one value per square
     for x in range(n):
         for y in range(n):
             lits = []
@@ -77,7 +86,7 @@ def get_clause(v, c):
                 weights.append(z)
             p.extend(PBEnc.equals(lits=lits_row, weights=weights, bound=z, vpool=vpool).clauses)
             p.extend(PBEnc.equals(lits=lits_col, weights=weights, bound=z, vpool=vpool).clauses)
-    # inequalities hold
+    # ensure inequalities hold
     for x in c:
         (a, b) = x
         (i1, j1) = a
@@ -92,7 +101,8 @@ def get_clause(v, c):
         p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
     return p
 
-
+# given the solved model of the board as well as the input
+# file characters, return the solved board
 def get_solved_board(solved_model, fic):
     board = re.sub('[0-9]', '_', '\n'.join(fic))
     for i in range(n):
@@ -103,14 +113,18 @@ def get_solved_board(solved_model, fic):
                     board = board[:next_to_replace] + str(k) + board[next_to_replace + 1:]
     return board
 
-
+# given a file name with path, return the solved model
+# if there exists a solution
 def solve_with_file(f):
     fic = read_file(f)
     v, c = get_grid(fic)
     p = get_clause(v, c)
     return solve_with_cnf(p, fic)
 
-
+# solves the futoshiki board given the CNF clauses p
+# and the input file characteristics, returns
+# the solution's model or none if the board
+# is unsolvable
 def solve_with_cnf(p, fic):
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
@@ -122,10 +136,9 @@ def solve_with_cnf(p, fic):
             print("Unsolvable!")
             return None
 
-
+# running the solver from the terminal with command line arguements
 if __name__ == "__main__":
     try:
         solve_with_file(sys.argv[1])
     except FileNotFoundError:
         print("Invalid file path given!")
-
