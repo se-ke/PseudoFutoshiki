@@ -1,6 +1,6 @@
+from pysat.pb import PBEnc
 from pysat.solvers import MapleChrono
-from pysat.pb import *
-from pysat.formula import IDPool
+from pysat.formula import IDPool, CNF
 import sys
 import re
 
@@ -9,22 +9,29 @@ import re
 # 3. Given the pre-existing cell values and constraints, create CNF formula
 # 4. Feed that CNF formula into SAT solver
 
-# assigns a unique number to represent the variable for a particular
+
+# assigns a unique number to represent the boolean variable for a particular
 # value z in tile position (x, y)
 def s(x, y, z):
     if z == "_":
         z = 0
     return (n * n) * x + n * y + int(z)
 
-# given a file path and name, return the characters
-# of the corresponding file
-def read_file(file_name):
-    with open(file_name, 'r') as f:
-        return f.read().split('\n')
 
-# given the file characters representing the futoshiki board,
-# return the array v containing the pre-existing tile values
-# on the board and also return the array c which contains
+# given a file path and name, return the characters of the corresponding file
+# split into a list that contains each line of the file as a separate string
+def read_file(file_name):
+    try:
+        with open(file_name, 'r') as f:
+            return f.read().split('\n')
+    except FileNotFoundError:
+        print("Invalid file path given!")
+        sys.exit(1)
+
+
+# given a list of the rows of a Futoshiki board in string format,
+# return the list v containing the pre-existing tile values
+# on the board and also return the list c which contains
 # pairs representing the constraints/inequalities in the board,
 # with the first element in the pair being larger than the second
 def get_grid(f):
@@ -54,38 +61,39 @@ def get_grid(f):
                     c.append([h(i - 1, j), h(i + 1, j)])
     return v, c
 
-# given the two arrays v (already assigned variables) and
-# c (tile constraints) return the clauses representing the
-# boolean formula needed to solve for a solution of the
-# futoshiki board
+
+# given two lists describing a Futoshiki board:
+# v (already assigned variables) and c (tile constraints),
+# return the CNF encoding of the Futoshiki board
 def get_clause(v, c):
     p = CNF()
     vpool = IDPool()
+    # add numbers that are prefilled and add all boolean variables to the pool of used variables
     for i in range(n):
         for j in range(n):
             for z in range(1, n + 1):
                 vpool.id('v{0}'.format(s(i, j, z)))
             if v[i][j] != "_":
                 p.extend(PBEnc.equals(lits=[s(i, j, v[i][j])], bound=1, vpool=vpool).clauses)
-    # at least one value per square
+    # ensure there is at least one value per square
     for x in range(n):
         for y in range(n):
             lits = []
             for z in range(1, n + 1):
                 lits.append(s(x, y, z))
             p.extend(PBEnc.atleast(lits=lits, bound=1, vpool=vpool).clauses)
-    # unique values in each row or column
+    # ensure there exists only 1 of each value in each row and column
     for z in range(1, n + 1):
         for a in range(n):
             lits_row = []
             lits_col = []
-            weights = []
+            # weights = [] todo
             for b in range(n):
                 lits_row.append(s(a, b, z))
                 lits_col.append(s(b, a, z))
-                weights.append(z)
-            p.extend(PBEnc.equals(lits=lits_row, weights=weights, bound=z, vpool=vpool).clauses)
-            p.extend(PBEnc.equals(lits=lits_col, weights=weights, bound=z, vpool=vpool).clauses)
+                # weights.append(z)
+            p.extend(PBEnc.equals(lits=lits_row, bound=1, vpool=vpool).clauses)
+            p.extend(PBEnc.equals(lits=lits_col, bound=1, vpool=vpool).clauses)
     # ensure inequalities hold
     for x in c:
         (a, b) = x
@@ -101,10 +109,11 @@ def get_clause(v, c):
         p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
     return p
 
-# given the solved model of the board as well as the input
-# file characters, return the solved board
-def get_solved_board(solved_model, fic):
-    board = re.sub('[0-9]', '_', '\n'.join(fic))
+
+# given the solved model of a board as well as the list of the board's rows as strings,
+# return the solved board as a single string
+def get_solved_board(solved_model, board):
+    board = re.sub('[0-9]', '_', '\n'.join(board))
     for i in range(n):
         for j in range(n):
             next_to_replace = board.find('_')
@@ -113,32 +122,27 @@ def get_solved_board(solved_model, fic):
                     board = board[:next_to_replace] + str(k) + board[next_to_replace + 1:]
     return board
 
-# given a file name with path, return the solved model
-# if there exists a solution
-def solve_with_file(f):
-    fic = read_file(f)
-    v, c = get_grid(fic)
-    p = get_clause(v, c)
-    return solve_with_cnf(p, fic)
 
-# solves the futoshiki board given the CNF clauses p
-# and the input file characteristics, returns
-# the solution's model or none if the board
-# is unsolvable
-def solve_with_cnf(p, fic):
+# given a file path to a Futoshiki board, return the solved model and prints out a solution if
+# the file exists, if the file contains a Futoshiki board, and if there exists a solution.
+# if the file does not exist or the board is unsolvable, the user is notified accordingly.
+def solve_with_file(f):
+    board = read_file(f)
+    v, c = get_grid(board)
+    p = get_clause(v, c)
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
         if is_solvable:
             print('---------------SOLUTION----------------')
-            print(get_solved_board(q.get_model(), fic))
+            print(get_solved_board(q.get_model(), board))
             return q.get_model()
         else:
             print("Unsolvable!")
             return None
 
-# running the solver from the terminal with command line arguements
+
+# running the solver from the terminal where the singular command line argument is
+# the file where the desired board-to-be-solved is stored
 if __name__ == "__main__":
-    try:
-        solve_with_file(sys.argv[1])
-    except FileNotFoundError:
-        print("Invalid file path given!")
+    solve_with_file(sys.argv[1])
+

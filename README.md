@@ -1,10 +1,10 @@
 # PseudoFutoshiki
 
-Simple overview of use/purpose.
+PseudoFutoshiki is a lightweight Futoshiki solver that makes use of pseudo-boolean formulae and a modern SAT solver to compute the solvability of a given game board.
 
 ## Description
 
-An in-depth paragraph about your project and overview of use.
+
 
 ## Getting Started
 
