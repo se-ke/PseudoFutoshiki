@@ -9,7 +9,7 @@ import re
 # 3. Given the pre-existing cell values and constraints, create CNF formula
 # 4. Feed that CNF formula into SAT solver
 
-
+# s : int x, int y, string/int z -> int output
 # assigns a unique number to represent the boolean variable for a particular
 # value z in tile position (x, y)
 def s(x, y, z):
@@ -18,8 +18,10 @@ def s(x, y, z):
     return (n * n) * x + n * y + int(z)
 
 
+# read_file : string file_name -> list output
 # given a file path and name, return the characters of the corresponding file
 # split into a list that contains each line of the file as a separate string
+# throws FileNotFoundError if input file_name cannot be found
 def read_file(file_name):
     try:
         with open(file_name, 'r') as f:
@@ -29,6 +31,7 @@ def read_file(file_name):
         sys.exit(1)
 
 
+# get_grid : list f -> list v, list c outputs
 # given a list of the rows of a Futoshiki board in string format,
 # return the list v containing the pre-existing tile values
 # on the board and also return the list c which contains
@@ -62,6 +65,7 @@ def get_grid(f):
     return v, c
 
 
+# get_clause : list v, list c -> CNF clauses p output
 # given two lists describing a Futoshiki board:
 # v (already assigned variables) and c (tile constraints),
 # return the CNF encoding of the Futoshiki board
@@ -110,6 +114,7 @@ def get_clause(v, c):
     return p
 
 
+# get_solved_board : Model solved_model, list board -> list board
 # given the solved model of a board as well as the list of the board's rows as strings,
 # return the solved board as a single string
 def get_solved_board(solved_model, board):
@@ -123,6 +128,7 @@ def get_solved_board(solved_model, board):
     return board
 
 
+# solve_with_file : string f -> Model output
 # given a file path to a Futoshiki board, return the solved model and prints out a solution if
 # the file exists, if the file contains a Futoshiki board, and if there exists a solution.
 # if the file does not exist or the board is unsolvable, the user is notified accordingly.
