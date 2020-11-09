@@ -4,6 +4,7 @@ from pysat.formula import IDPool, CNF
 import sys
 import re
 
+
 # 1. Read file characters
 # 2. Determine pre-existing cell values and constraints
 # 3. Given the pre-existing cell values and constraints, create CNF formula
@@ -82,20 +83,13 @@ def get_clause(v, c):
     # ensure there is at least one value per square
     for x in range(n):
         for y in range(n):
-            lits = []
-            for z in range(1, n + 1):
-                lits.append(s(x, y, z))
+            lits = list(map(lambda z: s(x, y, z), range(1, n + 1)))
             p.extend(PBEnc.atleast(lits=lits, bound=1, vpool=vpool).clauses)
     # ensure there exists only 1 of each value in each row and column
     for z in range(1, n + 1):
         for a in range(n):
-            lits_row = []
-            lits_col = []
-            # weights = [] todo
-            for b in range(n):
-                lits_row.append(s(a, b, z))
-                lits_col.append(s(b, a, z))
-                # weights.append(z)
+            lits_row = list(map(lambda b: s(a, b, z), range(n)))
+            lits_col = list(map(lambda b: s(b, a, z), range(n)))
             p.extend(PBEnc.equals(lits=lits_row, bound=1, vpool=vpool).clauses)
             p.extend(PBEnc.equals(lits=lits_col, bound=1, vpool=vpool).clauses)
     # ensure inequalities hold
@@ -103,13 +97,9 @@ def get_clause(v, c):
         (a, b) = x
         (i1, j1) = a
         (i2, j2) = b
-        lits = []
-        weights = []
-        for z in range(1, n + 1):
-            lits.append(s(i1, j1, z))
-            lits.append(s(i2, j2, z))
-            weights.append(z)
-            weights.append(-z)
+        lits = list(map(lambda z: s(i1, j1, z), range(1, n + 1))) + \
+               list(map(lambda z: s(i2, j2, z), range(1, n + 1)))
+        weights = list(range(1, n + 1)) + list(range(-1, -n - 1, -1))
         p.extend(PBEnc.atleast(lits=lits, weights=weights, bound=1, vpool=vpool).clauses)
     return p
 
@@ -151,4 +141,3 @@ def solve_with_file(f):
 # the file where the desired board-to-be-solved is stored
 if __name__ == "__main__":
     solve_with_file(sys.argv[1])
-
