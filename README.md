@@ -4,8 +4,14 @@ PseudoFutoshiki is a lightweight Futoshiki solver that makes use of pseudo-boole
 
 ## Description
 
+PseudoFutoshiki seeks to expand upon the work that others have done in the realm of solving logic puzzles using SAT solvers by making use of pseudo-boolean encodings. Pseudo-boolean encodings allow mathematical relations in the following form to be encoded in a boolean CNF formula:
 
+![](resources/psbenc_def.png)
 
+So, by taking advantage of the mathematical underpinnings of Futoshiki (in the form of Latin squares), pseudo-boolean encodings enable the development of clean, digestible, and unambiguous code. They also allow additional mathematical constraints to be put on the board with ease.
+
+The following is a sequence diagram depicting the algorithm's execution path. The solve and get_model methods come from the PySAT library, but the rest are home-grown.
+![](resources/sequence_diagram.png)
 ## Getting Started
 
 ### Installing

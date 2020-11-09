@@ -10,7 +10,7 @@ import re
 # 3. Given the pre-existing cell values and constraints, create CNF formula
 # 4. Feed that CNF formula into SAT solver
 
-# s : int x, int y, string/int z -> int output
+# s : int x, int y, string/int z -> int
 # assigns a unique number to represent the boolean variable for a particular
 # value z in tile position (x, y)
 def s(x, y, z):
@@ -32,45 +32,45 @@ def read_file(file_name):
         sys.exit(1)
 
 
-# get_grid : list f -> list v, list c outputs
+# get_grid : list board_rows -> list tiles, list constraints
 # given a list of the rows of a Futoshiki board in string format,
 # return the list v containing the pre-existing tile values
 # on the board and also return the list c which contains
 # pairs representing the constraints/inequalities in the board,
 # with the first element in the pair being larger than the second
-def get_grid(f):
+def get_grid(board_rows):
     global n
 
     def h(i, j):
         return (i // 2), (j // 2)
 
-    v, c, n = [], [], (len(f) + 1) // 2
+    tiles, constraints, n = [], [], (len(board_rows) + 1) // 2
 
-    for i in range(len(f)):
+    for i in range(len(board_rows)):
         if i % 2 == 0:
             ll = []
-            for j in range(len(f[i])):
-                if f[i][j] == '<':
-                    c.append([h(i, j + 1), h(i, j - 1)])
-                elif f[i][j] == '>':
-                    c.append([h(i, j - 1), h(i, j + 1)])
-                elif f[i][j] != ' ':
-                    ll.append(f[i][j])
-            v.append(ll)
+            for j in range(len(board_rows[i])):
+                if board_rows[i][j] == '<':
+                    constraints.append([h(i, j + 1), h(i, j - 1)])
+                elif board_rows[i][j] == '>':
+                    constraints.append([h(i, j - 1), h(i, j + 1)])
+                elif board_rows[i][j] != ' ':
+                    ll.append(board_rows[i][j])
+            tiles.append(ll)
         else:
-            for j in range(len(f[i])):
-                if f[i][j] == '^':
-                    c.append([h(i + 1, j), h(i - 1, j)])
-                if f[i][j] == 'v' or f[i][j] == 'V':
-                    c.append([h(i - 1, j), h(i + 1, j)])
-    return v, c
+            for j in range(len(board_rows[i])):
+                if board_rows[i][j] == '^':
+                    constraints.append([h(i + 1, j), h(i - 1, j)])
+                if board_rows[i][j] == 'v' or board_rows[i][j] == 'V':
+                    constraints.append([h(i - 1, j), h(i + 1, j)])
+    return tiles, constraints
 
 
-# get_clause : list v, list c -> CNF clauses p output
+# get_clause : list v, list c -> CNF clauses p
 # given two lists describing a Futoshiki board:
 # v (already assigned variables) and c (tile constraints),
 # return the CNF encoding of the Futoshiki board
-def get_clause(v, c):
+def get_clause(t, c):
     p = CNF()
     vpool = IDPool()
     # add numbers that are prefilled and add all boolean variables to the pool of used variables
@@ -78,8 +78,8 @@ def get_clause(v, c):
         for j in range(n):
             for z in range(1, n + 1):
                 vpool.id('v{0}'.format(s(i, j, z)))
-            if v[i][j] != "_":
-                p.extend(PBEnc.equals(lits=[s(i, j, v[i][j])], bound=1, vpool=vpool).clauses)
+            if t[i][j] != "_":
+                p.extend(PBEnc.equals(lits=[s(i, j, t[i][j])], bound=1, vpool=vpool).clauses)
     # ensure there is at least one value per square
     for x in range(n):
         for y in range(n):
@@ -118,14 +118,14 @@ def get_solved_board(solved_model, board):
     return board
 
 
-# solve_with_file : string f -> Model output
+# solve_with_file : string file_name -> Model
 # given a file path to a Futoshiki board, return the solved model and prints out a solution if
 # the file exists, if the file contains a Futoshiki board, and if there exists a solution.
 # if the file does not exist or the board is unsolvable, the user is notified accordingly.
-def solve_with_file(f):
-    board = read_file(f)
-    v, c = get_grid(board)
-    p = get_clause(v, c)
+def solve_with_file(file_name):
+    board = read_file(file_name)
+    tiles, constraints = get_grid(board)
+    p = get_clause(tiles, constraints)
     with MapleChrono(bootstrap_with=p.clauses) as q:
         is_solvable = q.solve()
         if is_solvable:
