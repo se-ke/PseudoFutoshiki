@@ -135,7 +135,46 @@ class TestSolvablity(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_grid5(self, mock_stdout):
-        self.assertIsNotNone(main.solve_with_file("boards/grid5.txt"))
+        self.assertIsNotNone(main.solve_with_file("boards/grid5_1.txt"))
+        self.assertIsNotNone(main.solve_with_file("boards/grid5_2.txt"))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_grid5_1_solvable_solution(self, mock_stdout):
+        main.solve_with_file("boards/grid5_1.txt")
+        self.assertEqual(mock_stdout.getvalue(), "---------------SOLUTION----------------"
+                                                 "\n5 2>1 3 4"
+                                                 "\n. . . . ."
+                                                 "\n3 5 2 4 1"
+                                                 "\n. . . v ."
+                                                 "\n4 1<3 2 5"
+                                                 "\n. . . . ."
+                                                 "\n1 3 4 5 2"
+                                                 "\n^ ^ . . ."
+                                                 "\n2 4<5 1 3"
+                                                 "\n")
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_grid7(self, mock_stdout):
+        self.assertIsNotNone(main.solve_with_file("boards/grid7.txt"))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_grid7_solvable_solution(self, mock_stdout):
+        main.solve_with_file("boards/grid7.txt")
+        self.assertEqual(mock_stdout.getvalue(), "---------------SOLUTION----------------"
+                                                 "\n5>4>1<2<7 3 6"
+                                                 "\n. . . . . . v"
+                                                 "\n1 7 6>4>2<5 3"
+                                                 "\n. v . ^ . . ."
+                                                 "\n4 3 5 6 1<2 7"
+                                                 "\nv v ^ . . . v"
+                                                 "\n3>2 7 5 6 4 1"
+                                                 "\n. . . . . . ."
+                                                 "\n7>6 2 3 5 1 4"
+                                                 "\n. . . . . . ^"
+                                                 "\n2 1 3 7 4 6>5"
+                                                 "\n. . ^ v . ^ ."
+                                                 "\n6>5>4 1 3 7 2"
+                                                 "\n")
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_grid9(self, mock_stdout):

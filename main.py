@@ -140,4 +140,7 @@ def solve_with_file(file_name):
 # running the solver from the terminal where the singular command line argument is
 # the file where the desired board-to-be-solved is stored
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Invalid arguments! Please supply exactly 1 argument--the filepath of your desired board.")
+        sys.exit(1)
     solve_with_file(sys.argv[1])
